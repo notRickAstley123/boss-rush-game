@@ -4,3 +4,4 @@ well. this was supposed to be a boss rush game but as of currently it does have 
 this uses SFML for its base, using sfml graphics, sfml audio (not used yet in this current uhh build), sfml system, sfml window, iostream (for output and testing reasons), cstdlib, cmath, vector, and algorithm
 to run this, you just need to download all the files from the demo link (itch.io)
 demo link: https://valencey.itch.io/a-boss-rush-game-stuff
+also WASD is for movement and T is for your attack ! 
