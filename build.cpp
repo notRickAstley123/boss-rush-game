@@ -8,22 +8,23 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
-
+// Setup
 using namespace std;
-float cleavecooldown = 60;
+float cleavecooldown = 0;
 float cleaveduration = 0;
 bool cleavin = false;
 float speed = 5.f;
 const float bulletSpeed = 6.f;
 const int shootInterval = 30;
 const float pi = 3.14159265f;
+bool cleavehit = false;
 
 sf::Vector2f getCenter(const sf::Sprite& s)
 {
     sf::FloatRect b = s.getGlobalBounds();
     return {b.position.x + b.size.x / 2.f, b.position.y + b.size.y / 2.f};
 }
-
+// Should change this later to a hitbox check
 bool cleaveHitsBoss(const sf::Sprite& cleave, sf::Vector2f bossCenter,
                       sf::Vector2f aim, const sf::Sprite& player)
 {
@@ -33,13 +34,14 @@ bool cleaveHitsBoss(const sf::Sprite& cleave, sf::Vector2f bossCenter,
 
     sf::Vector2f u = aim / aimLength;   
     sf::Vector2f n = {-u.y, u.x};       
-
+    // The cleave hitbox is rotated
     sf::Vector2f cleaveSize = cleave.getLocalBounds().size;
     float length = cleaveSize.x;        
     float halfWidth = cleaveSize.y / 2.f;
 
 
     sf::FloatRect pb = player.getGlobalBounds();
+    // Treats the player as a circle 
     float playerRadius = std::max(pb.size.x, pb.size.y) / 2.f;
 
     sf::Vector2f d = getCenter(player) - bossCenter;
@@ -51,17 +53,26 @@ bool cleaveHitsBoss(const sf::Sprite& cleave, sf::Vector2f bossCenter,
            std::abs(side) <= halfWidth + playerRadius;
 
 }
-void damageboss ((int damage) (int bossHP))
+float bossHealth = 100;
+void damageBoss(float amount)
 {
-    
+    bossHealth -= amount;
+
 }
-;
+// Not used yet, should be used later once I set up a heath bar system
 struct HealthBar
 {
     sf::Vector2f position;
     sf::Vector2f location;
     sf::Vector2f direction;
 };
+struct HealthBarBack
+{
+    sf::Vector2f position;
+    sf::Vector2f location;
+    sf::Vector2f direction;
+};
+// Used for the projectiles
 struct Bullet
 {
     sf::Vector2f position;
@@ -70,27 +81,16 @@ struct Bullet
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode({800, 600}), "le game oui oui oui");
+    // 800 by 600 pixels
+    sf::RenderWindow window(sf::VideoMode({800, 600}), "boss rush game");
+    // 30 frames per second
     window.setFramerateLimit(30);
-
+    
+    // Loading textures
     sf::Texture playertexture;
     if (!playertexture.loadFromFile("pixels.png"))
     {
         std::cout << "file load fail1\n";
-        std::cin.get();
-        return 1;
-    }
-    sf::Texture PlayerHealthBarTexture;
-    if(!PlayerHealthBarTexture.loadFromFile("playerhealthbar.png"))
-    {
-        std::cout << "file load fail\n";
-        std::cin.get();
-        return 1;
-    }
-    sf::Texture BossHealthBarBack;
-    if(!BossHealthBarBack.loadFromFile("bosshealthbarback.png"))
-    {
-        std::cout << "file load fail\n";
         std::cin.get();
         return 1;
     }
@@ -117,12 +117,28 @@ int main()
         std::cin.get();
         return 1;
     }
-
+    sf::Texture PlayerHealthbarFrontTexture;
+    if (!PlayerHealthbarFrontTexture.loadFromFile("healthbar.png"))
+    {
+        std::cout << "file load fail4\n";
+        std::cin.get();
+        return 1;
+    }
+    sf::Sprite PlayerHealthbarFront(PlayerHealthbarFrontTexture);
+    sf::Texture PlayerHealthbarBackTexture;
+    if (!PlayerHealthbarBackTexture.loadFromFile("healthbarback.png"))
+    {
+        std::cout << "file load fail4\n";
+        std::cin.get();
+        return 1;
+    }
+    sf::Sprite PlayerHealthbarBack(PlayerHealthbarBackTexture);
     sf::Sprite cleave1(cleave_texture1);
     {
         sf::Vector2f size = cleave1.getLocalBounds().size;
         cleave1.setOrigin({0.f, size.y / 2.f});
     }
+    
 
     sf::Sprite boss1(aurafulbosstexture);
     boss1.setPosition({150.f, 150.f});
@@ -135,10 +151,10 @@ int main()
         sf::Vector2f size = projectile1.getLocalBounds().size;
         projectile1.setOrigin({size.x / 2.f, size.y / 2.f});
     }
-
+    PlayerHealthbarBack.setOrigin({2.f, 2.f});
+    PlayerHealthbarFront.setOrigin({2.f, 2.f});
     std::vector<Bullet> bullets;
     int shootTimer = 0;
-
     while (window.isOpen())
     {
         while (const std::optional event = window.pollEvent())
@@ -146,7 +162,7 @@ int main()
             if (event->is<sf::Event::Closed>())
                 window.close();
         }
-
+        // Player movement
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
             player.move({0.f, -speed});
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
@@ -158,25 +174,26 @@ int main()
 
         sf::Vector2f bossCenter = getCenter(boss1);
         sf::Vector2f playerCenter = getCenter(player);
-
+        // Unused
         sf::Vector2f aim = playerCenter - bossCenter;
-
+        // Attack is aimed towards the cursor
         sf::Vector2f mousePos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(window));
         sf::Vector2f cleaveAim = mousePos - playerCenter;
         float cleaveAngle = std::atan2(cleaveAim.y, cleaveAim.x);
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::T))
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::T) && cleavecooldown == 0)
+        {
             cleaveduration = 12;
+            cleavecooldown = 60;
+            cleavehit = false;
+        }
 
+        // Count down the swing and the cooldown
+        cleavin = cleaveduration > 0;
         if (cleaveduration > 0)
-        {
-            cleaveduration -= 1;
-            cleavin = true;
-        }
-        else
-        {
-            cleavin = false;
-        }
+            cleaveduration--;
+        if (cleavecooldown > 0)
+            cleavecooldown--;
+
 
         if (cleavin)
         {
@@ -210,10 +227,12 @@ int main()
                 remaining.push_back(b);
         }
         bullets = remaining;
-
+        // Drawing stuff
         window.clear(sf::Color::Black);
         window.draw(player);
         window.draw(boss1);
+        window.draw(PlayerHealthbarBack);
+        window.draw(PlayerHealthbarFront);
 
         for (const Bullet& b : bullets)
         {
