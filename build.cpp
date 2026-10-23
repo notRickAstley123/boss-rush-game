@@ -9,6 +9,10 @@
 #include <vector>
 #include <algorithm>
 // Setup
+float playerHealth=100;
+float playerMaxHealth=100;
+float bossHealth = 500;
+float bossMaxHealth=500;
 using namespace std;
 float cleavecooldown = 0;
 float cleaveduration = 0;
@@ -25,7 +29,7 @@ sf::Vector2f getCenter(const sf::Sprite& s)
     return {b.position.x + b.size.x / 2.f, b.position.y + b.size.y / 2.f};
 }
 // Should change this later to a hitbox check
-bool cleaveHitsBoss(const sf::Sprite& cleave, sf::Vector2f bossCenter,
+bool PlayerMeleeCheck(const sf::Sprite& cleave, sf::Vector2f bossCenter,
                       sf::Vector2f aim, const sf::Sprite& player)
 {
     float aimLength = std::sqrt(aim.x * aim.x + aim.y * aim.y);
@@ -53,8 +57,9 @@ bool cleaveHitsBoss(const sf::Sprite& cleave, sf::Vector2f bossCenter,
            std::abs(side) <= halfWidth + playerRadius;
 
 }
-float bossHealth = 100;
-void damageBoss(float amount)
+
+void 
+Boss(float amount)
 {
     bossHealth -= amount;
 
@@ -132,14 +137,16 @@ int main()
         std::cin.get();
         return 1;
     }
+    sf::Sprite BossHealthbarFront(PlayerHealthbarFrontTexture);
+    sf::Sprite BossHealthbarBack(PlayerHealthbarBackTexture);
     sf::Sprite PlayerHealthbarBack(PlayerHealthbarBackTexture);
     sf::Sprite cleave1(cleave_texture1);
     {
         sf::Vector2f size = cleave1.getLocalBounds().size;
         cleave1.setOrigin({0.f, size.y / 2.f});
     }
-    
-
+    float iFrames=5;
+    float iFrameTickdown=0;
     sf::Sprite boss1(aurafulbosstexture);
     boss1.setPosition({150.f, 150.f});
 
@@ -151,8 +158,12 @@ int main()
         sf::Vector2f size = projectile1.getLocalBounds().size;
         projectile1.setOrigin({size.x / 2.f, size.y / 2.f});
     }
-    PlayerHealthbarBack.setOrigin({2.f, 2.f});
-    PlayerHealthbarFront.setOrigin({2.f, 2.f});
+    PlayerHealthbarBack.setPosition({50, 50});
+    PlayerHealthbarFront.setPosition({50,50});
+    BossHealthbarFront.setRotation(sf::degrees(90.f));
+    BossHealthbarBack.setRotation(sf::degrees(90.f));
+    BossHealthbarBack.setPosition({500, 20});
+    BossHealthbarFront.setPosition({501, 21});
     std::vector<Bullet> bullets;
     int shootTimer = 0;
     while (window.isOpen())
@@ -199,7 +210,15 @@ int main()
         {
             cleave1.setPosition(playerCenter);
             cleave1.setRotation(sf::radians(cleaveAngle));
+            if (PlayerMeleeCheck)
+            {
+
+                bossHealth=bossHealth-10;
+            }
         }
+
+        PlayerHealthbarFront.setScale({1.f,(playerHealth/playerMaxHealth)});
+        BossHealthbarFront.setScale({1.f, (bossHealth/bossMaxHealth)});
         shootTimer++;
         if (shootTimer >= shootInterval)
         {
@@ -220,11 +239,18 @@ int main()
 
             if (player.getGlobalBounds().findIntersection(projectile1.getGlobalBounds()))
             {
-                std::cout << "oof\n";
-                continue;
+                if (iFrames==0)
+                {
+                    playerHealth=playerHealth-10;
+                    iFrames=5;
+                }
             }
-            if (!offScreen)
+            if (!offScreen);
                 remaining.push_back(b);
+        }
+        if (iFrames>0)
+        {
+            iFrames=iFrames-1;
         }
         bullets = remaining;
         // Drawing stuff
@@ -233,6 +259,9 @@ int main()
         window.draw(boss1);
         window.draw(PlayerHealthbarBack);
         window.draw(PlayerHealthbarFront);
+        window.draw(BossHealthbarBack);
+        window.draw(BossHealthbarFront);
+
 
         for (const Bullet& b : bullets)
         {
@@ -244,6 +273,7 @@ int main()
             window.draw(cleave1);
 
         window.display();
+        
     }
 
     return 0;
