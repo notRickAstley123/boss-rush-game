@@ -21,8 +21,8 @@ float cleavehitcooldown = 5;
 float cleavehitcooldowntickdown = 0;
 bool cleavin = false;
 float playerArrowSpeed=8.67;
-float arrowDamage = 5;
-const int playerarrowcooldown = 10;
+float arrowDamage = 7.5;
+int playerarrowcooldown = 10;
 float speed = 5.f;
 float bulletSpeed = 6.f;
 int shootInterval = 30;
@@ -94,6 +94,10 @@ bool PlayerMeleeCheck(const sf::Sprite& cleave, const sf::Sprite& boss)
     }
     return true;
 }
+void dash()
+{
+    cout << "not functional yet";
+}
 void firePlayerArrow(std::vector<playerProjectileStruct>& arrows, sf::Vector2f from, sf::Vector2f target)
 {
     sf::Vector2f direction = target - from;
@@ -108,6 +112,7 @@ Boss(float amount)
     bossHealth -= amount;
 
 }
+
 struct HealthBar
 {
     sf::Vector2f position;
@@ -128,8 +133,7 @@ struct enemyBullet
 };
 int main()
 {
-    // 800 by 600 pixels
-    sf::RenderWindow window(sf::VideoMode({800, 600}), "boss rush game");
+    sf::RenderWindow window(sf::VideoMode({1000, 700}), "boss rush game");
     // 30 frames per second
     window.setFramerateLimit(30);
     
@@ -148,6 +152,14 @@ int main()
         std::cin.get();
         return 1;
     }
+    sf::Texture greenKaboomTexture;
+    if (!greenKaboomTexture.loadFromFile("greenkaboom.jpg"))
+    {
+        std::cout << "file load fail\n";
+        std::cin.get();
+        return 1;
+    }     
+    sf::Sprite greenKaboom(greenKaboomTexture);
     sf::Texture playerArrowTexture;
     if (!playerArrowTexture.loadFromFile("arrow.png"))
     {
@@ -196,7 +208,7 @@ int main()
     sf::Sprite BossHealthbarFront(PlayerHealthbarFrontTexture);
     sf::Sprite BossHealthbarBack(PlayerHealthbarBackTexture);
     sf::Sprite PlayerHealthbarBack(PlayerHealthbarBackTexture);
-    sf::Sprite cleave1(cleave_texture1);
+    sf::Sprite cleave1(cleave_texture1); 
     {
         sf::Vector2f size = cleave1.getLocalBounds().size;
         cleave1.setOrigin({0.f, size.y / 2.f});
@@ -227,6 +239,7 @@ int main()
     std::vector<playerProjectileStruct> playerArrows;
     int playerarrowshootcooldown = 0;
     kaboom.setPosition({0,0});
+    greenKaboom.setPosition({0,0});
     while (window.isOpen())
     {
         while (const std::optional event = window.pollEvent())
@@ -235,6 +248,10 @@ int main()
                 window.close();
         }
         // Player movement
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q))
+        {
+            dash();
+        }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
             player.move({0.f, -speed});
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
@@ -249,7 +266,8 @@ int main()
         sf::Vector2f playerCenter = getCenter(player);
         // Unused
         sf::Vector2f aim = playerCenter - bossCenter;
-        
+        sf::Vector2f test = bossCenter - playerCenter;
+        // idk
         // Attack is aimed towards the cursor
         sf::Vector2f mousePos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(window));
         sf::Vector2f cleaveAim = mousePos - playerCenter;
@@ -261,7 +279,6 @@ int main()
             firePlayerArrow(playerArrows, playerCenter, mousePos);
             playerarrowshootcooldown = playerarrowcooldown;
         }
-
         std::vector<playerProjectileStruct> keptProjectiles;
         for (playerProjectileStruct a : playerArrows)
         {
@@ -274,6 +291,7 @@ int main()
                 bossHealth -= arrowDamage;
                 arrow1.setPosition({-50.f, -100.f});
             }
+
         
 
         bool offScreen = a.position.x < -50.f || a.position.x > 850.f ||
@@ -286,8 +304,8 @@ int main()
         float cleaveAngle = std::atan2(cleaveAim.y, cleaveAim.x);
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::T) && cleavecooldown == 0)
         {
-            cleaveduration = 15;
-            cleavecooldown = 75;
+            cleaveduration = 12;
+            cleavecooldown = 50;
             cleavehit = false;
         }
         
@@ -305,8 +323,8 @@ int main()
             cleave1.setRotation(sf::radians(std::atan2(cleaveAim.y, cleaveAim.x)));
             if (PlayerMeleeCheck(cleave1, boss1) && cleavehitcooldown ==0)
                 {
-                    bossHealth=bossHealth-75;
-                    cleavehitcooldown = 5;
+                    bossHealth=bossHealth-100;
+                    cleavehitcooldown = 10;
                 }
         }
         
@@ -320,22 +338,27 @@ int main()
         if (20>tickBossPhases && tickBossPhases>10)
         {
             shootInterval=13;
+            boss1.setPosition({200.f, 300.f});
         }
         if (40>tickBossPhases && tickBossPhases>20)
         {
             shootInterval=10;
+            boss1.setPosition({300.f, 300.f});
         }
         if (60>tickBossPhases && tickBossPhases>40)
         {
             shootInterval=7;
+            boss1.setPosition({400.f, 300.f});
         }
         if (65>tickBossPhases && tickBossPhases>30)
         {
             shootInterval=5;
+            boss1.setPosition({500.f, 300.f});
         }
         if (90>tickBossPhases && tickBossPhases>65)
         { 
             shootInterval=2;
+            boss1.setPosition({600.f, 300.f});
             
         }
         if (tickBossPhases>90)
@@ -343,6 +366,7 @@ int main()
             shootInterval=15;
             tickBossPhases=0;
             bulletSpeed = 7;
+            boss1.setPosition({100.f, 300.f});
         }
         shootTimer++;
         if (shootTimer >= shootInterval)
@@ -366,8 +390,8 @@ int main()
             {
                 if (iFrames==0)
                 {
-                    playerHealth=playerHealth-10;
-                    iFrames=5;
+                    playerHealth=playerHealth-7.5;
+                    iFrames=3;
                 }
             }
 
@@ -391,7 +415,6 @@ int main()
         window.draw(BossHealthbarFront);
 
 
-
         for (const enemyBullet& b : bullets)
         {
             projectile1.setPosition(b.position);
@@ -407,15 +430,15 @@ int main()
             window.draw(cleave1);
         if (bossHealth < 1)
         {
-            window.draw(kaboom);
+            window.draw(greenKaboom);
         }
-        window.display();
         if (playerHealth < 1)
         {
             window.draw(kaboom);
+
         }
+        window.display();
         tickBossPhases=tickBossPhases+1;
     }
-
     return 0;
 }
