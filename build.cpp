@@ -134,19 +134,79 @@ struct enemyBullet
     sf::Vector2f position;
     sf::Vector2f velocity;
 };
-struct button
+class Button
 {
-    sf::Vector2f position;
-    sf::Vector2f location;
-    sf::Vector2f size;
-};
+public:
+    Button(const sf::Font& font, const std::string& text, sf::Vector2f position, sf::Vector2f size) : shape(size), label(font, text, 28)
+    {
+        shape.setPosition(position);
+        shape.setFillColor(sf::Color(60,60,60));
 
+        const sf::FloatRect tb = label.getLocalBounds();
+        label.setOrigin({tb.position.x + tb.size.x / 2.f, tb.position.y + tb.size.y / 2.f});
+        label.setPosition({position + size /2.f});
+        
+    }
+    
+    bool contains(sf::Vector2f point) const
+    {
+        return shape.getGlobalBounds().contains(point);
+    }
+    void draw(sf::RenderTarget&target, bool hovered) const
+    {
+        sf::RectangleShape s = shape;
+        s.setFillColor(hovered ? sf::Color(100,100,100): sf::Color(60,60,60));
+        target.draw(s);
+        target.draw(label);
+    }
+private:
+sf::RectangleShape shape;
+sf::Text label;
+};
+enum class gameState
+{
+    menu1,
+    gear_select,
+    boss1,
+    paused,
+};
+class menu1
+{
+    public:
+    enum class Action(play, options, exit);
+    explicit MainMenu(const sf::Font font)
+        : title(font, "game")
+        playbutton(font, "play !", {20.f, 20.f}, {30.f, 30.f})
+        optionbutton(font,"options", {300.f, 300.f}, {400.f, 400.f})
+        quitbutton(font, "quit", {70.f, 70.f}, {100.f, 100.f})
+    {
+        title.setPosition({400.f, 100.f});
+
+    }
+}
+class gear_select
+{
+    public:
+    enum class Action {sword, bow, nothing_else_yet}
+    // (lawsuit) /j
+
+
+    
+}
 int main()
 {
     sf::RenderWindow window(sf::VideoMode({1000, 700}), "boss rush game");
     // 30 frames per second
     window.setFramerateLimit(30);
-    
+    //Loading the font
+    sf::Font font;
+    if (!font.openFromFile("not workin yet"))
+    {
+        std::cout << "no font :< \n";
+        std::cin.get();
+        return 1;
+    }
+
     // Loading textures
     sf::Texture playertexture;
     if (!playertexture.loadFromFile("pixels.png"))
@@ -383,7 +443,10 @@ int main()
             if (hitBoss)
             {
                 bossHealth = std::max(0.f, bossHealth - a.damage);
-                arrowDamage = 10;
+                if (arrowCharging = false)
+                {
+                    arrowDamage = 10;
+                }
                 
             }
             const bool offScreen = a.position.x < -50.f || a.position.x > 850.f ||
