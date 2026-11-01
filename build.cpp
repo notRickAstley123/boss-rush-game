@@ -9,19 +9,20 @@
 #include <vector>
 #include <algorithm>
 // Setup
+bool arrowCharging = false;
 bool attackcheck = false;
 float playerHealth=100;
 float playerMaxHealth=100;
-float bossHealth = 1000;
-float bossMaxHealth=1000;
+float bossHealth = 500;
+float bossMaxHealth=500;
 using namespace std;
 float cleavecooldown = 0;
 float cleaveduration = 0;
 float cleavehitcooldown = 5;
 float cleavehitcooldowntickdown = 0;
 bool cleavin = false;
-float playerArrowSpeed=8.67;
-float arrowDamage = 7.5;
+float playerArrowSpeed=1;
+float arrowDamage = 1;
 int playerarrowcooldown = 10;
 float speed = 5.f;
 float bulletSpeed = 6.f;
@@ -29,7 +30,7 @@ int shootInterval = 30;
 const float pi = 3.14159265f;
 bool cleavehit = false;
 int tickBossPhases = 0;
-
+int dashCDtickdown = 0;
 sf::Vector2f getCenter(const sf::Sprite& s)
 {
     sf::FloatRect b = s.getGlobalBounds();
@@ -40,6 +41,8 @@ struct playerProjectileStruct
     sf::Vector2f position;
     sf::Vector2f velocity;
     sf::Vector2f direction;
+    float damage;
+    float arrowSpeed;
 };
 // Should change this later to a hitbox check
 bool PlayerMeleeCheck(const sf::Sprite& cleave, const sf::Sprite& boss)
@@ -94,17 +97,14 @@ bool PlayerMeleeCheck(const sf::Sprite& cleave, const sf::Sprite& boss)
     }
     return true;
 }
-void dash()
-{
-    cout << "not functional yet";
-}
-void firePlayerArrow(std::vector<playerProjectileStruct>& arrows, sf::Vector2f from, sf::Vector2f target)
+
+void firePlayerArrow(std::vector<playerProjectileStruct>& arrows, sf::Vector2f from, sf::Vector2f target, float damage, float arrowSpeed)
 {
     sf::Vector2f direction = target - from;
-    float length = std::sqrt(direction.x * direction.x+direction.y*direction.y);
+    float length = std::sqrt(direction.x * direction.x + direction.y * direction.y);
     if (length == 0.f)
         return;
-    arrows.push_back({from, (direction/length) * playerArrowSpeed});
+    arrows.push_back({from, (direction / length) * arrowSpeed, {}, damage, arrowSpeed});
 }
 void 
 Boss(float amount)
@@ -112,7 +112,10 @@ Boss(float amount)
     bossHealth -= amount;
 
 }
+void bossFight1()
+{
 
+}
 struct HealthBar
 {
     sf::Vector2f position;
@@ -131,6 +134,13 @@ struct enemyBullet
     sf::Vector2f position;
     sf::Vector2f velocity;
 };
+struct button
+{
+    sf::Vector2f position;
+    sf::Vector2f location;
+    sf::Vector2f size;
+};
+
 int main()
 {
     sf::RenderWindow window(sf::VideoMode({1000, 700}), "boss rush game");
@@ -142,6 +152,14 @@ int main()
     if (!playertexture.loadFromFile("pixels.png"))
     {
         std::cout << "file load fail1\n";
+        std::cin.get();
+        return 1;
+    }
+    sf::Texture WhiteButtonBackgroundTexture;
+    // edit later
+    if (WhiteButtonBackgroundTexture.loadFromFile("nothing yet"))
+    {
+        std::cout << "file load failed\n";
         std::cin.get();
         return 1;
     }
@@ -229,11 +247,11 @@ int main()
     }
 
     PlayerHealthbarBack.setPosition({50, 50});
-    PlayerHealthbarFront.setPosition({50,50});
+    PlayerHealthbarFront.setPosition({51,51});
     BossHealthbarFront.setRotation(sf::degrees(90.f));
     BossHealthbarBack.setRotation(sf::degrees(90.f));
     BossHealthbarBack.setPosition({500, 20});
-    BossHealthbarFront.setPosition({501, 21});
+    BossHealthbarFront.setPosition({502, 22});
     std::vector<enemyBullet> bullets;
     int shootTimer = 0;
     std::vector<playerProjectileStruct> playerArrows;
@@ -248,19 +266,79 @@ int main()
                 window.close();
         }
         // Player movement
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q))
+        if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)) && (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))&&(dashCDtickdown==0)&&(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)))
         {
-            dash();
+            player.move({(-speed*15), (-speed*15)});
+            speed=2;
+            dashCDtickdown=15;
+        }
+        if((sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))&&(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))&&(dashCDtickdown==0)&&(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)))
+        {
+            player.move({(speed*15),(-speed*15)});
+            speed=2;
+            dashCDtickdown=15;
+
+        }
+        if((sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))&&(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))&&(dashCDtickdown==0)&&(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)))
+        {
+            player.move({(speed*15),(speed*15)});
+            speed=2;
+            dashCDtickdown=15;
+        }
+        if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)) && (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))&&(dashCDtickdown==0)&&(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)))
+        {
+            player.move({(-speed*15), (speed*15)});
+            speed=2;
+            dashCDtickdown=15;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)&&(dashCDtickdown==0)&&(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)))
+        {
+            player.move({0.f, (-speed*30)});
+            speed=2;
+            dashCDtickdown=15;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S)&&(dashCDtickdown==0)&&(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)))
+        {
+            player.move({0.f, (speed*30)});
+            speed=2;
+            dashCDtickdown=15;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)&&(dashCDtickdown==0)&&(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)))
+        {
+            player.move({(-speed*30), 0.f});
+            speed=2;
+            dashCDtickdown=15;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)&&(dashCDtickdown==0)&&(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q)))
+        {
+            player.move({(speed*30), 0.f});
+            speed = 2;
+            dashCDtickdown=15;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
+        {
+            player.move({(speed), 0.f});
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
+        {
+            player.move({(-speed), 0.f});
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
-            player.move({0.f, -speed});
+        {
+            player.move({0.f,(-speed)});
+        }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
-            player.move({0.f, speed});
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
-            player.move({-speed, 0.f});
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
-            player.move({speed, 0.f});
-        
+        {
+            player.move({0.f, (speed)});
+        }
+        if (dashCDtickdown > 0)
+        {
+            dashCDtickdown=dashCDtickdown-1;
+        }
+        if (dashCDtickdown == 0)
+        {
+            speed = 5;
+        }
 
         sf::Vector2f bossCenter = getCenter(boss1);
         sf::Vector2f playerCenter = getCenter(player);
@@ -276,31 +354,44 @@ int main()
 
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::G) && playerarrowshootcooldown == 0)
         {
-            firePlayerArrow(playerArrows, playerCenter, mousePos);
-            playerarrowshootcooldown = playerarrowcooldown;
+            arrowCharging = true;
+        }
+        if (arrowCharging==true)
+        {
+            if (arrowDamage<300)
+            {
+                arrowDamage+=5.f;
+            }
+            if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Key::G))
+            {
+                float arrowSpeed = std::min(4.f + arrowDamage / 20.f, 20.f);
+                firePlayerArrow(playerArrows, playerCenter, mousePos, arrowDamage, arrowSpeed);
+
+                playerarrowshootcooldown = playerarrowcooldown; 
+                arrowCharging=false;
+            }
         }
         std::vector<playerProjectileStruct> keptProjectiles;
-        for (playerProjectileStruct a : playerArrows)
+        for (const playerProjectileStruct& projectile : playerArrows)
         {
+            playerProjectileStruct a = projectile;
             a.position += a.velocity;
             arrow1.setPosition(a.position);
             arrow1.setRotation(sf::radians(std::atan2(a.velocity.y, a.velocity.x)));
 
-            if (arrow1.getGlobalBounds().findIntersection(boss1.getGlobalBounds()))
+            const bool hitBoss = arrow1.getGlobalBounds().findIntersection(boss1.getGlobalBounds()).has_value();
+            if (hitBoss)
             {
-                bossHealth -= arrowDamage;
-                arrow1.setPosition({-50.f, -100.f});
+                bossHealth = std::max(0.f, bossHealth - a.damage);
+                arrowDamage = 10;
+                
             }
-
-        
-
-        bool offScreen = a.position.x < -50.f || a.position.x > 850.f ||
-                        a.position.y < -50.f || a.position.y > 650.f;
-        if (!offScreen)
-            keptProjectiles.push_back(a);
-
-        playerArrows = keptProjectiles;
+            const bool offScreen = a.position.x < -50.f || a.position.x > 850.f ||
+                                   a.position.y < -50.f || a.position.y > 650.f;
+            if (!hitBoss && !offScreen)
+                keptProjectiles.push_back(a);
         }
+        playerArrows = std::move(keptProjectiles);
         float cleaveAngle = std::atan2(cleaveAim.y, cleaveAim.x);
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::T) && cleavecooldown == 0)
         {
@@ -335,27 +426,27 @@ int main()
         PlayerHealthbarFront.setScale({1.f,(playerHealth/playerMaxHealth)});
         BossHealthbarFront.setScale({1.f, ((bossHealth/bossMaxHealth)*3)});
         BossHealthbarBack.setScale({1.f, 3.f});
-        if (20>tickBossPhases && tickBossPhases>10)
+        if (tickBossPhases > 10 && tickBossPhases <= 20)
         {
             shootInterval=13;
             boss1.setPosition({200.f, 300.f});
         }
-        if (40>tickBossPhases && tickBossPhases>20)
+        if (tickBossPhases > 20 && tickBossPhases <= 40)
         {
             shootInterval=10;
             boss1.setPosition({300.f, 300.f});
         }
-        if (60>tickBossPhases && tickBossPhases>40)
+        if (tickBossPhases > 40 && tickBossPhases <= 60)
         {
             shootInterval=7;
             boss1.setPosition({400.f, 300.f});
         }
-        if (65>tickBossPhases && tickBossPhases>30)
+        if (tickBossPhases > 60 && tickBossPhases <= 65)
         {
             shootInterval=5;
             boss1.setPosition({500.f, 300.f});
         }
-        if (90>tickBossPhases && tickBossPhases>65)
+        if (tickBossPhases > 65 && tickBossPhases <= 90)
         { 
             shootInterval=2;
             boss1.setPosition({600.f, 300.f});
@@ -374,28 +465,31 @@ int main()
             shootTimer = 0;
             float length = std::sqrt(aim.x * aim.x + aim.y * aim.y);
             if (length > 0.f)
+            {
                 bullets.push_back({bossCenter, (aim / length) * bulletSpeed});
+            }
         }
-
         std::vector<enemyBullet> remaining;
-        for (enemyBullet b : bullets)
+        for (const enemyBullet& bullet : bullets)
         {
+            enemyBullet b = bullet;
             b.position += b.velocity;
             projectile1.setPosition(b.position);
 
             bool offScreen = b.position.x < -50.f || b.position.x > 850.f ||
                              b.position.y < -50.f || b.position.y > 650.f;
 
-            if (player.getGlobalBounds().findIntersection(projectile1.getGlobalBounds()))
+            const bool hitPlayer = player.getGlobalBounds().findIntersection(projectile1.getGlobalBounds()).has_value();
+            if (hitPlayer)
             {
                 if (iFrames==0)
                 {
-                    playerHealth=playerHealth-7.5;
+                    playerHealth = std::max(0.f, playerHealth - 7.5f);
                     iFrames=3;
                 }
             }
 
-            if (!offScreen)
+            if (!offScreen && !hitPlayer)
             {
                 remaining.push_back(b);
             }
@@ -427,7 +521,9 @@ int main()
             window.draw(arrow1);
         }
         if (cleavin)
+        {
             window.draw(cleave1);
+        }
         if (bossHealth < 1)
         {
             window.draw(greenKaboom);
@@ -435,10 +531,12 @@ int main()
         if (playerHealth < 1)
         {
             window.draw(kaboom);
-
         }
         window.display();
         tickBossPhases=tickBossPhases+1;
     }
     return 0;
 }
+
+
+
