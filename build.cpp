@@ -11,6 +11,7 @@
 #include <algorithm>
 using namespace std;
 
+
 struct MeleeWeapon
 {
     string name;
@@ -30,7 +31,14 @@ struct RangedWeapon
     float maxSpeed;
     int cooldown;
 };
+struct UtilityGear
+{
+    string name;
+    int effectType;
+    sf::Vector2f velocity;
+    sf::Vector2f size;
 
+};
 const vector<MeleeWeapon> meleeWeapons = {
     {"Cleave",      100.f, 50, 12, 1.0f},
     {"Quick Slash",  50.f, 25,  8, 0.7f},
@@ -40,10 +48,12 @@ const vector<MeleeWeapon> meleeWeapons = {
 const vector<RangedWeapon> rangedWeapons = {
     {"Longbow",    10.f, 300.f, 5.f, 4.f, 20.f, 10},
     {"Quick Shot", 15.f,  15.f, 0.f, 12.f, 12.f, 5},
-    {"Lance.", 1.f, 600.f, 2.f, 3.f, 20.f, 20}
+    {"Heavy Shot", 1.f, 600.f, 2.f, 3.f, 20.f, 20}
     
 };
-
+const vector<UtilityGear> UtilityItems = {
+    {"grenade", 1}
+};
 // Setup
 bool arrowCharging = false;
 float playerHealth = 100;
@@ -60,7 +70,8 @@ float bulletSpeed = 6.f;
 int shootInterval = 30;
 int tickBossPhases = 0;
 int dashCDtickdown = 0;
-
+float boss1Speed = 0;
+float bossToPlayerDistanceNum;
 enum class GameState
 {
     MainMenu,
@@ -97,7 +108,13 @@ bool loadOrFail(sf::Texture& texture, const string& path)
     cin.get();
     return false;
 }
+void UtilityUse(int effectType, sf::Vector2f from, sf::Vector2f target, sf::Vector2f velocity)
+{
+    if (effectType==1)
+    {
 
+    }
+}
 // Separating-axis test between the swing and the boss
 bool PlayerMeleeCheck(const sf::Sprite& cleave, const sf::Sprite& boss)
 {
@@ -342,8 +359,7 @@ int main()
     }
 
     // Loading textures
-    sf::Texture playertexture, bullettexture, greenKaboomTexture, playerArrowTexture, cleave_texture1,
-                kaboomTexture, aurafulbosstexture, PlayerHealthbarFrontTexture, PlayerHealthbarBackTexture;
+    sf::Texture playertexture, bullettexture, greenKaboomTexture, playerArrowTexture, cleave_texture1, kaboomTexture, aurafulbosstexture, PlayerHealthbarFrontTexture, PlayerHealthbarBackTexture, grenadeTexture;
     if (!loadOrFail(playertexture, "pixels.png")) return 1;
     if (!loadOrFail(bullettexture, "bullet.png")) return 1;
     if (!loadOrFail(greenKaboomTexture, "greenkaboom.jpg")) return 1;
@@ -353,7 +369,8 @@ int main()
     if (!loadOrFail(aurafulbosstexture, "auraful_tm_opera_o.png")) return 1;
     if (!loadOrFail(PlayerHealthbarFrontTexture, "healthbar.png")) return 1;
     if (!loadOrFail(PlayerHealthbarBackTexture, "healthbarback.png")) return 1;
-
+    if (!loadOrFail(grenadeTexture, "grenadeTexture")) return 1;
+    sf::Sprite grenade(grenadeTexture);
     sf::Sprite greenKaboom(greenKaboomTexture);
     sf::Sprite kaboom(kaboomTexture);
     kaboom.setPosition({0, 0});
@@ -381,10 +398,12 @@ int main()
         projectile1.setOrigin({size.x / 2.f, size.y / 2.f});
     }
 
+
     sf::Sprite PlayerHealthbarFront(PlayerHealthbarFrontTexture);
     sf::Sprite PlayerHealthbarBack(PlayerHealthbarBackTexture);
     sf::Sprite BossHealthbarFront(PlayerHealthbarFrontTexture);
     sf::Sprite BossHealthbarBack(PlayerHealthbarBackTexture);
+
     PlayerHealthbarBack.setPosition({50, 50});
     PlayerHealthbarFront.setPosition({51, 51});
     BossHealthbarFront.setRotation(sf::degrees(90.f));
@@ -532,39 +551,33 @@ int main()
                 window.display();
                 break;
             }
-
+            
             // ----- Boss phases (before aiming, so shots use the current position) -----
             if (tickBossPhases > 90)
             {
                 tickBossPhases = 0;
                 shootInterval = 15;
                 bulletSpeed = 7.f;
-                boss1.setPosition({100.f, 300.f});
             }
             else if (tickBossPhases > 65)
             {
                 shootInterval = 2;
-                boss1.setPosition({600.f, 300.f});
             }
             else if (tickBossPhases > 60)
             {
                 shootInterval = 5;
-                boss1.setPosition({500.f, 300.f});
             }
             else if (tickBossPhases > 40)
             {
                 shootInterval = 7;
-                boss1.setPosition({400.f, 300.f});
             }
             else if (tickBossPhases > 20)
             {
                 shootInterval = 10;
-                boss1.setPosition({300.f, 300.f});
             }
             else if (tickBossPhases > 10)
             {
                 shootInterval = 13;
-                boss1.setPosition({200.f, 300.f});
             }
 
             // ----- Dash: hold Q and a direction, 15-frame cooldown -----
@@ -572,6 +585,7 @@ int main()
                 dashCDtickdown--;
 
             bool dashedThisFrame = false;
+
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q) && dashCDtickdown == 0)
             {
                 sf::Vector2f dir{0.f, 0.f};
@@ -611,12 +625,31 @@ int main()
             const sf::Vector2f playerCenter = getCenter(player);
             const sf::Vector2f aim = playerCenter - bossCenter;
             const sf::Vector2f cleaveAim = mouse - playerCenter;
-
-            // ----- Ranged: charge (hold G) or fire on press, depending on the weapon -----
+            sf::Vector2f playerBossOffset = playerCenter-bossCenter;
+            bossToPlayerDistanceNum=(sqrt((playerBossOffset.x*playerBossOffset.x)+(playerBossOffset.y*playerBossOffset.y)));
             if (playerarrowshootcooldown > 0)
                 playerarrowshootcooldown--;
+            if (bossToPlayerDistanceNum >100) 
+            {
+                
+                boss1.move(aim, 10.f);
+                
 
+            }
+            if ( bossToPlayerDistanceNum > 400) &&(bossDashAttackCooldown == 0)
+            {
+                sf::setDirection(vector:aim*(pi*2));
+                move({0.f,0.f});
+
+            }
             const bool gHeld = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::G);
+            const bool bHeld = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::B);
+
+            if (bHeld==true)
+            {
+                cout << "not workin yet";
+                
+            };
             auto fireArrow = [&]()
             {
                 const float arrowSpeed = std::min(ranged.baseSpeed + arrowDamage / 20.f, ranged.maxSpeed);
@@ -641,6 +674,7 @@ int main()
             else if (gHeld && !gWasHeld && playerarrowshootcooldown == 0)
             {
                 fireArrow();
+                
             }
             gWasHeld = gHeld;
 
