@@ -629,21 +629,33 @@ int main()
             const sf::Vector2f cleaveAim = mouse - playerCenter;
             sf::Vector2f playerBossOffset = playerCenter-bossCenter;
             bossToPlayerDistanceNum=(sqrt((playerBossOffset.x*playerBossOffset.x)+(playerBossOffset.y*playerBossOffset.y)));
+
+            sf::Vector2f bossMoveDirection = playerBossOffset/bossToPlayerDistanceNum;
+            
+
+            
             
             if (playerarrowshootcooldown > 0)
                 playerarrowshootcooldown--;
             if (bossToPlayerDistanceNum >100) 
             {
                 
-                boss1.move(playerBossOffset*-20.f);
-                
+                boss1.move(bossMoveDirection*3.f);
 
+
+            }
+            if (bossDashAttackCooldown > 0)
+            {
+                
+                bossDashAttackCooldown=bossDashAttackCooldown-1;
+                
             }
             if ( bossToPlayerDistanceNum > 400 && bossDashAttackCooldown == 0)
             {
                 boss1.setRotation(sf::radians(std::atan2(aim.y, aim.x)));
-                boss1.move({0.f,0.f});
-
+                boss1.move({bossMoveDirection*0.5f});
+                
+                bossDashAttackCooldown=90;
             }
             const bool gHeld = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::G);
             const bool bHeld = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::B);
