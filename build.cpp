@@ -13,7 +13,7 @@ using namespace std;
 
 
 struct MeleeWeapon
-{
+{   
     string name;
     float damage;
     int cooldown;      
@@ -72,6 +72,8 @@ int tickBossPhases = 0;
 int dashCDtickdown = 0;
 float boss1Speed = 0;
 float bossToPlayerDistanceNum;
+int bossDashAttackCooldown = 0;
+float pi = 3.14159265;
 enum class GameState
 {
     MainMenu,
@@ -369,7 +371,7 @@ int main()
     if (!loadOrFail(aurafulbosstexture, "auraful_tm_opera_o.png")) return 1;
     if (!loadOrFail(PlayerHealthbarFrontTexture, "healthbar.png")) return 1;
     if (!loadOrFail(PlayerHealthbarBackTexture, "healthbarback.png")) return 1;
-    if (!loadOrFail(grenadeTexture, "grenadeTexture")) return 1;
+    if (!loadOrFail(grenadeTexture, "grenade.png")) return 1;
     sf::Sprite grenade(grenadeTexture);
     sf::Sprite greenKaboom(greenKaboomTexture);
     sf::Sprite kaboom(kaboomTexture);
@@ -627,19 +629,20 @@ int main()
             const sf::Vector2f cleaveAim = mouse - playerCenter;
             sf::Vector2f playerBossOffset = playerCenter-bossCenter;
             bossToPlayerDistanceNum=(sqrt((playerBossOffset.x*playerBossOffset.x)+(playerBossOffset.y*playerBossOffset.y)));
+            
             if (playerarrowshootcooldown > 0)
                 playerarrowshootcooldown--;
             if (bossToPlayerDistanceNum >100) 
             {
                 
-                boss1.move(aim, 10.f);
+                boss1.move(playerBossOffset*-20.f);
                 
 
             }
-            if ( bossToPlayerDistanceNum > 400) &&(bossDashAttackCooldown == 0)
+            if ( bossToPlayerDistanceNum > 400 && bossDashAttackCooldown == 0)
             {
-                sf::setDirection(vector:aim*(pi*2));
-                move({0.f,0.f});
+                boss1.setRotation(sf::radians(std::atan2(aim.y, aim.x)));
+                boss1.move({0.f,0.f});
 
             }
             const bool gHeld = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::G);
